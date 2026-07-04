@@ -12,13 +12,30 @@ public enum SpriteShape
 }
 
 /// <summary>
-/// シーン起動時に9人パーティと敵勢力を生成してバトルを開始する。
-/// BattleManager・TurnManager 等がなければ自動生成する。
+/// シーン起動時のモード分岐ルーター。
+/// Field モードなら 3D フィールドを、Battle モードなら現在のパーティと
+/// 章に応じた敵編成でバトルを構築する。
 /// </summary>
 public class BattleBootstrap : MonoBehaviour
 {
     void Start()
     {
+        CharacterDB.EnsureBuilt();
+
+        // ---- フィールドモード ----
+        if (StoryManager.Mode == GameMode.Field)
+        {
+            if (GameManager.Instance == null)
+            {
+                var g = new GameObject("_GameManager");
+                g.AddComponent<GameManager>();
+            }
+            if (GetComponent<FieldBootstrap>() == null)
+                gameObject.AddComponent<FieldBootstrap>();
+            return;
+        }
+
+        // ---- バトルモード ----
         EnsureManagers();
         EnsureCamera();
 
@@ -75,84 +92,116 @@ public class BattleBootstrap : MonoBehaviour
     }
 
     // ================================================================
-    // 味方9人（PDF設定準拠）
+    // 味方：StoryManager のパーティ構成から生成（前衛4＋後衛）
     // ================================================================
     private List<BattleUnit> CreateAllies()
     {
         var list = new List<BattleUnit>();
+        int blessings = StoryManager.Blessings.Count;
 
-        // ---- 前衛4人 ----
-        list.Add(MakeUnit("主人公 ケイ", CharacterType.Protagonist, UltimateType.TimeStop,
-            "時間断絶", hp:130, mp:70, atk:36, def:20, spd:25, mpCost:30,
-            isEnemy:false, SpriteShape.Human, new Color(0.35f, 0.55f, 1f),
-            pos: new Vector3(-7.4f, -1.1f, 0), scale: new Vector3(1.2f, 1.8f, 1f)));
+        var frontX = new float[] { -7.4f, -5.7f, -4.0f, -2.3f };
+        var backX  = new float[] { -8.0f, -6.5f, -5.0f, -3.5f, -2.0f };
 
-        list.Add(MakeUnit("ヒロイン アイ", CharacterType.Heroine, UltimateType.MemoryReplay,
-            "記憶回廊", hp:100, mp:90, atk:32, def:15, spd:30, mpCost:35,
-            isEnemy:false, SpriteShape.Human, new Color(1f, 0.6f, 0.8f),
-            pos: new Vector3(-5.7f, -1.1f, 0), scale: new Vector3(1.15f, 1.75f, 1f)));
+        int fi = 0, bi = 0;
+        foreach (var id in StoryManager.PartyIds)
+        {
+            var def = CharacterDB.Get(id);
+            if (def == null) continue;
 
-        list.Add(MakeUnit("親友 リュウ", CharacterType.BestFriend, UltimateType.SpaceRift,
-            "空間斬", hp:115, mp:55, atk:42, def:24, spd:20, mpCost:25,
-            isEnemy:false, SpriteShape.Human, new Color(0.7f, 0.75f, 0.85f),
-            pos: new Vector3(-4.0f, -1.1f, 0), scale: new Vector3(1.2f, 1.85f, 1f)));
+            Vector3 pos; Vector3 scale;
+            if (fi < 4)
+            {
+                pos   = new Vector3(frontX[fi], def.shape == SpriteShape.Dog ? -1.45f : -1.1f, 0);
+                scale = def.shape == SpriteShape.Dog
+                    ? new Vector3(1.2f, 0.85f, 1f) : new Vector3(1.2f, 1.8f, 1f);
+                fi++;
+            }
+            else
+            {
+                float x = backX[Mathf.Min(bi, backX.Length - 1)];
+                pos   = new Vector3(x, def.shape == SpriteShape.Dog ? 0.65f : 0.8f, 0);
+                scale = def.shape == SpriteShape.Dog
+                    ? new Vector3(1.0f, 0.7f, 1f) : new Vector3(0.9f, 1.35f, 1f);
+                bi++;
+            }
 
-        list.Add(MakeUnit("ショタ ニーヨ", CharacterType.Shota, UltimateType.EventRewrite,
-            "事象書換", hp:85, mp:65, atk:30, def:12, spd:33, mpCost:30,
-            isEnemy:false, SpriteShape.Human, new Color(1f, 0.85f, 0.4f),
-            pos: new Vector3(-2.3f, -1.2f, 0), scale: new Vector3(1.0f, 1.45f, 1f)));
-
-        // ---- 後衛5人 ----
-        list.Add(MakeUnit("次元の巫女 レイ", CharacterType.Witch, UltimateType.DimensionCall,
-            "次元干渉", hp:90, mp:100, atk:34, def:14, spd:22, mpCost:40,
-            isEnemy:false, SpriteShape.Human, new Color(0.75f, 0.5f, 1f),
-            pos: new Vector3(-8.0f, 0.8f, 0), scale: new Vector3(0.9f, 1.35f, 1f)));
-
-        list.Add(MakeUnit("ギャル ルナ", CharacterType.Gal, UltimateType.AbyssCall,
-            "本体召喚", hp:95, mp:85, atk:33, def:16, spd:28, mpCost:40,
-            isEnemy:false, SpriteShape.Human, new Color(1f, 0.8f, 0.3f),
-            pos: new Vector3(-6.5f, 0.8f, 0), scale: new Vector3(0.9f, 1.35f, 1f)));
-
-        list.Add(MakeUnit("アンドロイド ミサ", CharacterType.Android, UltimateType.SatelliteBeam,
-            "衛星通信", hp:110, mp:60, atk:38, def:22, spd:18, mpCost:35,
-            isEnemy:false, SpriteShape.Android, new Color(0.4f, 0.95f, 0.9f),
-            pos: new Vector3(-5.0f, 0.8f, 0), scale: new Vector3(0.85f, 1.25f, 1f)));
-
-        list.Add(MakeUnit("幽霊犬 ポチ", CharacterType.Ghost, UltimateType.GhostRush,
-            "突撃", hp:75, mp:50, atk:28, def:10, spd:38, mpCost:20,
-            isEnemy:false, SpriteShape.Dog, new Color(0.85f, 0.9f, 1f),
-            pos: new Vector3(-3.5f, 0.65f, 0), scale: new Vector3(1.0f, 0.7f, 1f)));
-
-        list.Add(MakeUnit("王女 エリカ", CharacterType.Princess, UltimateType.Payoff,
-            "ペイオフ", hp:100, mp:75, atk:31, def:18, spd:24, mpCost:35,
-            isEnemy:false, SpriteShape.Human, new Color(1f, 0.72f, 0.2f),
-            pos: new Vector3(-2.0f, 0.8f, 0), scale: new Vector3(0.9f, 1.35f, 1f)));
-
+            list.Add(MakeUnitFromDef(def, blessings, pos, scale));
+        }
         return list;
     }
 
+    private BattleUnit MakeUnitFromDef(CharacterDef def, int blessings, Vector3 pos, Vector3 scale)
+    {
+        var go = new GameObject(def.name);
+        go.transform.position   = pos;
+        go.transform.localScale = scale;
+
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite       = MakeCharacterSprite(def.shape);
+        sr.color        = def.color;
+        sr.sortingOrder = 2;
+
+        AddOutline(go, def.color, false, def.shape);
+        AddNameLabel(go, def.name, false);
+
+        var unit = go.AddComponent<BattleUnit>();
+        unit.Initialize(CharacterDB.CreateData(def.id, blessings), false);
+        return unit;
+    }
+
     // ================================================================
-    // 敵勢力：厄災のカナタ（ボス）+ 戦闘用アンドロイド×2
+    // 敵編成：章のバトルIDに応じて変わる
     // ================================================================
     private List<BattleUnit> CreateEnemies()
     {
         var list = new List<BattleUnit>();
 
-        list.Add(MakeUnit("戦闘用アンドロイドα", CharacterType.Android, UltimateType.SatelliteBeam,
-            "自爆特攻", hp:120, mp:30, atk:26, def:14, spd:20, mpCost:99,
-            isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
-            pos: new Vector3(2.6f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+        switch (StoryManager.PendingBattle)
+        {
+            // 第2章：戦闘用アンドロイド×2
+            case BattleId.Androids:
+                list.Add(MakeUnit("戦闘用アンドロイドα", CharacterType.Android, UltimateType.SatelliteBeam,
+                    "自爆特攻", hp:110, mp:30, atk:22, def:12, spd:20, mpCost:99,
+                    isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
+                    pos: new Vector3(3.2f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+                list.Add(MakeUnit("戦闘用アンドロイドβ", CharacterType.Android, UltimateType.SatelliteBeam,
+                    "自爆特攻", hp:110, mp:30, atk:22, def:12, spd:19, mpCost:99,
+                    isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
+                    pos: new Vector3(6.4f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+                break;
 
-        // ボス（CharacterType.Witch を厄災判定に使用）
-        list.Add(MakeUnit("厄災のカナタ", CharacterType.Witch, UltimateType.AbyssCall,
-            "厄災", hp:420, mp:999, atk:34, def:22, spd:26, mpCost:0,
-            isEnemy:true, SpriteShape.Boss, new Color(0.75f, 0.15f, 0.25f),
-            pos: new Vector3(5.0f, 0.9f, 0), scale: new Vector3(2.0f, 2.7f, 1f)));
+            // 第5章：深淵のギャル・ルナ（中ボス）
+            case BattleId.Runa:
+                list.Add(MakeUnit("深淵のルナ", CharacterType.Gal, UltimateType.AbyssCall,
+                    "深淵の視線", hp:280, mp:99, atk:28, def:16, spd:28, mpCost:0,
+                    isEnemy:true, SpriteShape.Human, new Color(0.85f, 0.7f, 0.2f),
+                    pos: new Vector3(4.8f, -0.2f, 0), scale: new Vector3(1.5f, 2.1f, 1f)));
+                break;
 
-        list.Add(MakeUnit("戦闘用アンドロイドβ", CharacterType.Android, UltimateType.SatelliteBeam,
-            "自爆特攻", hp:120, mp:30, atk:26, def:14, spd:19, mpCost:99,
-            isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
-            pos: new Vector3(7.4f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+            // 第8章：洗脳された親友リュウ
+            case BattleId.Ryu:
+                list.Add(MakeUnit("洗脳されたリュウ", CharacterType.BestFriend, UltimateType.SpaceRift,
+                    "虚ろな空間斬", hp:340, mp:99, atk:36, def:22, spd:24, mpCost:0,
+                    isEnemy:true, SpriteShape.Human, new Color(0.45f, 0.45f, 0.6f),
+                    pos: new Vector3(4.8f, -0.2f, 0), scale: new Vector3(1.5f, 2.2f, 1f)));
+                break;
+
+            // 第11章 Xデー：厄災のカナタ＋護衛
+            default:
+                list.Add(MakeUnit("戦闘用アンドロイドα", CharacterType.Android, UltimateType.SatelliteBeam,
+                    "自爆特攻", hp:120, mp:30, atk:26, def:14, spd:20, mpCost:99,
+                    isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
+                    pos: new Vector3(2.6f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+                list.Add(MakeUnit("厄災のカナタ", CharacterType.Witch, UltimateType.AbyssCall,
+                    "厄災", hp:450, mp:999, atk:34, def:22, spd:26, mpCost:0,
+                    isEnemy:true, SpriteShape.Boss, new Color(0.75f, 0.15f, 0.25f),
+                    pos: new Vector3(5.0f, 0.9f, 0), scale: new Vector3(2.0f, 2.7f, 1f)));
+                list.Add(MakeUnit("戦闘用アンドロイドβ", CharacterType.Android, UltimateType.SatelliteBeam,
+                    "自爆特攻", hp:120, mp:30, atk:26, def:14, spd:19, mpCost:99,
+                    isEnemy:true, SpriteShape.Spiky, new Color(0.6f, 0.35f, 0.35f),
+                    pos: new Vector3(7.4f, -0.5f, 0), scale: new Vector3(1.3f, 1.7f, 1f)));
+                break;
+        }
 
         return list;
     }

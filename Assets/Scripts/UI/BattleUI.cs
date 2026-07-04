@@ -44,6 +44,12 @@ public class BattleUI : MonoBehaviour
     // ================================================================
     void Awake()
     {
+        // フィールドモードではバトルUIを構築しない
+        if (StoryManager.Mode != GameMode.Battle)
+        {
+            enabled = false;
+            return;
+        }
         EnsureEventSystem();
         BuildCanvas();
     }
@@ -486,9 +492,17 @@ public class BattleUI : MonoBehaviour
         SetInput(false);
         if (result == BattleResult.Victory)
         {
-            _turnText.text  = "★ 真エンディング ★";
-            _turnText.color = Color.yellow;
-            StartCoroutine(CoVictoryBanner());
+            if (StoryManager.PendingBattle == BattleId.Final)
+            {
+                _turnText.text  = "★ 真エンディング ★";
+                _turnText.color = Color.yellow;
+                StartCoroutine(CoVictoryBanner());
+            }
+            else
+            {
+                _turnText.text  = "★ 勝利！ ★";
+                _turnText.color = Color.yellow;
+            }
         }
         else
         {

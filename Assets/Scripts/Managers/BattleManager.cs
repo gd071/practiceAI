@@ -99,7 +99,13 @@ public class BattleManager : MonoBehaviour
         yield return null;
         turnManager.Initialize(allies, enemies);
         Log($"──── {LoopNumber}周目 ────");
-        Log("厄災のカナタが立ちはだかる…！");
+        Log(StoryManager.PendingBattle switch
+        {
+            BattleId.Androids => "戦闘用アンドロイドが襲いかかってきた！",
+            BattleId.Runa     => "深淵のルナが✖印の目で笑っている──！",
+            BattleId.Ryu      => "洗脳されたリュウが剣を構える……！",
+            _                 => "厄災のカナタが立ちはだかる…！",
+        });
     }
 
     // ================================================================
@@ -322,7 +328,17 @@ public class BattleManager : MonoBehaviour
     private IEnumerator MinionAction(BattleUnit minion)
     {
         var target = GetRandomAlly();
-        if (target != null)
+        if (target == null) yield break;
+
+        // 中ボス（ultimateMPCost==0 の敵）は固有技で強めに攻撃してくる
+        bool isMidBoss = minion.Data.ultimateMPCost == 0;
+        if (isMidBoss && Random.value < 0.5f)
+        {
+            Log($"{minion.UnitName} の【{minion.Data.ultimateName}】！");
+            int d = target.TakeDamage(Mathf.RoundToInt(minion.Data.atk * 1.5f));
+            Log($"  → {target.UnitName} に {d} ダメージ！");
+        }
+        else
         {
             Log($"{minion.UnitName} の攻撃！");
             int d = target.TakeDamage(minion.GetBaseAttackDamage());
@@ -493,16 +509,32 @@ public class BattleManager : MonoBehaviour
 
         if (result == BattleResult.Victory)
         {
-            Log("厄災は打ち払われた──隕石は、砕けた。");
-            Log($"{LoopNumber}周に及ぶループの果て、全ての選択が実を結んだ。");
-            Log("──真エンディング──");
-            PlayerPrefs.SetInt("LoopNumber", 195); // 周回リセット
-            PlayerPrefs.Save();
+            if (StoryManager.PendingBattle == BattleId.Final)
+            {
+                Log("厄災は打ち払われた──隕石は、砕けた。");
+                Log($"{LoopNumber}周に及ぶループの果て、全ての選択が実を結んだ。");
+                Log("──真エンディング──");
+                PlayerPrefs.SetInt("LoopNumber", 195); // 周回リセット
+                PlayerPrefs.Save();
+                StartCoroutine(CoReturnToField(8f));  // 余韻の後、エンド後の世界へ
+            }
+            else
+            {
+                Log("勝利した！　……物語は続く。");
+                StartCoroutine(CoReturnToField(3f));
+            }
         }
         else
         {
             StartCoroutine(CoDefeatLoop());
         }
+    }
+
+    /// <summary>勝利後、章を進めてフィールドへ戻る。</summary>
+    private IEnumerator CoReturnToField(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        StoryManager.OnBattleWon();
     }
 
     /// <summary>敗北＝ループ。周回数を進めて世界をやり直す。</summary>

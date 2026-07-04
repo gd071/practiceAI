@@ -62,6 +62,21 @@ UltimateType:  TimeStop/MemoryReplay/SpaceRift/EventRewrite/DimensionCall/
 - [x] BattleVisuals（星空・脈動する隕石・地面ライン）
 - [x] ループ構造（敗北→PlayerPrefs「LoopNumber」を進めてシーンリロード。195周目開始、勝利で真エンド）
 
+## フィールド＆ストーリー（完成版）
+- **モード分岐**：`StoryManager.Mode`（Field/Battle）。BattleBootstrap がルーターとなり、
+  Field なら FieldBootstrap（3D町＋ドット絵キャラ）、Battle なら従来バトルを構築
+- **3D背景**：学校・神社・商店街・時計塔・公園・浜辺をプリミティブで構築（HD-2D風、
+  パースペクティブカメラ42°見下ろし）。空にはXデーの隕石
+- **ドット絵キャラ**：PixelSpriteFactory（16x24, FilterMode.Point, 歩行2コマ）。
+  パーティは隊列でついて歩く（PlayerController の軌跡追従）
+- **ストーリー全13章**（StoryEvents.cs）：3人開始→ニーヨ/ミサ/レイ/ルナ/ポチ加入→
+  第7章でアイ死亡＆リュウ洗脳離脱→洗脳リュウ戦→ブレイドトス救出＆エリカ加入→
+  第10章 時間逆行でアイ復活→Xデー最終決戦→真エンド後の世界
+- **会話**：DialogueUI（名前欄＋タイプライター、スペース/クリック送り）
+- **ミニゲーム3種**：シャボン玉（浜辺）/ アイス早食い（商店街）/ 花火（公園）。
+  初クリアで「加護」→ 全員のバトルステータス強化（StoryManager.Blessings）
+- **進行保存**：章・パーティ・加護は PlayerPrefs（Story.Chapter / Story.Party / Story.Blessings）
+
 ## バトルシステム（PDF「ゲーム設定まとめ」準拠）
 - パーティ共有の砂時計100カウント。攻撃20 / スキル30 / 必殺技45 / 救急10、パスは+15
 - 好きな味方キャラのカードをクリックして行動キャラを自由に選択
