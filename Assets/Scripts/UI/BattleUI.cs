@@ -529,7 +529,7 @@ public class BattleUI : MonoBehaviour
         }
 
         var banner = MakeText(_canvas.transform,
-            "全ての選択を、成功させた。\n\n隕石は砕け、197周のループは終わりを告げる。\n\n── 真エンディング ──",
+            $"全ての選択を、成功させた。\n\n隕石は砕け、{BattleManager.LoopNumber}周のループは終わりを告げる。\n\n── 真エンディング ──",
             42, new Color(0.15f, 0.1f, 0.05f), TextAnchor.MiddleCenter,
             new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.75f), Vector2.zero, Vector2.zero);
         banner.fontStyle = FontStyle.Bold;

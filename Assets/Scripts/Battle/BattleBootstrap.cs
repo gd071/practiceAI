@@ -186,6 +186,12 @@ public class BattleBootstrap : MonoBehaviour
                     pos: new Vector3(4.8f, -0.2f, 0), scale: new Vector3(1.5f, 2.2f, 1f)));
                 break;
 
+            // 想定外の遷移（BattleId.None）ならフィールドへ帰す
+            case BattleId.None:
+                Debug.LogWarning("[BattleBootstrap] PendingBattle が None のままバトルが開始された。フィールドへ戻る。");
+                StoryManager.ReturnToField();
+                break;
+
             // 第11章 Xデー：厄災のカナタ＋護衛
             default:
                 list.Add(MakeUnit("戦闘用アンドロイドα", CharacterType.Android, UltimateType.SatelliteBeam,

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(winget search *)",
+      "PowerShell(winget list *)",
+      "PowerShell(winget --version)",
+      "PowerShell(powercfg /query *)",
+      "PowerShell(dotnet --list-sdks)",
+      "PowerShell(gh --version)"
+    ]
+  }
+}

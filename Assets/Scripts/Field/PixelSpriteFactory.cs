@@ -65,7 +65,8 @@ public static class PixelSpriteFactory
     /// <summary>犬のドット絵（24x14）。</summary>
     public static Sprite Dog(Color furMain, int frame)
     {
-        string key = $"dog_{frame}";
+        // 毛色もキーに含める（色違いの犬でスプライトが混ざらないように）
+        string key = $"dog_{ColorUtility.ToHtmlStringRGB(furMain)}_{frame}";
         if (_cache.TryGetValue(key, out var s) && s != null) return s;
 
         const int W = 24, H = 14;

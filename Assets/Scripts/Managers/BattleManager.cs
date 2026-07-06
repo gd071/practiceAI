@@ -514,9 +514,8 @@ public class BattleManager : MonoBehaviour
                 Log("厄災は打ち払われた──隕石は、砕けた。");
                 Log($"{LoopNumber}周に及ぶループの果て、全ての選択が実を結んだ。");
                 Log("──真エンディング──");
-                PlayerPrefs.SetInt("LoopNumber", 195); // 周回リセット
-                PlayerPrefs.Save();
                 StartCoroutine(CoReturnToField(8f));  // 余韻の後、エンド後の世界へ
+                // 周回リセットは CoReturnToField 側で行う（バナー表示が正しい周回数を使えるように）
             }
             else
             {
@@ -534,6 +533,14 @@ public class BattleManager : MonoBehaviour
     private IEnumerator CoReturnToField(float delay)
     {
         yield return new WaitForSeconds(delay);
+
+        // 最終戦勝利なら周回をリセット（バナー表示後に行う）
+        if (StoryManager.PendingBattle == BattleId.Final)
+        {
+            PlayerPrefs.SetInt("LoopNumber", 195);
+            PlayerPrefs.Save();
+        }
+
         StoryManager.OnBattleWon();
     }
 

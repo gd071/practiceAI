@@ -43,7 +43,8 @@ public class DialogueUI : MonoBehaviour
     // ================================================================
     void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        // _Bootstrap に同居しているため gameObject ごと破壊してはいけない
+        if (Instance != null && Instance != this) { Destroy(this); return; }
         Instance = this;
         BuildUI();
     }
